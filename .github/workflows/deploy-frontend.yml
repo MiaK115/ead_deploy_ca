@@ -4,41 +4,67 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Target environment (e.g., staging, prod)"
-        required: true
+        description: "Environment (folder under env/)"
+        type: choice
+        options: [ "staging" ]
         default: "staging"
       release:
-        description: "Frontend release name (frontend-blue or frontend-green)"
-        required: true
+        description: "Helm release name (frontend-blue or frontend-green)"
+        type: choice
+        options: [ "frontend-blue", "frontend-green" ]
         default: "frontend-blue"
       image_tag:
-        description: "Image tag (commit SHA from frontend build)"
+        description: "Frontend image tag (commit SHA from frontend-ci)"
         required: true
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Azure login
+      # Azure login (uses your repo secret)
+      - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # Get kubeconfig for AKS (uses repo variables)
       - name: Set AKS context
         uses: azure/aks-set-context@v3
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-          cluster-name: ead-aks
-          resource-group: ead-rg
+          resource-group: ${{ vars.AKS_RG }}
+          cluster-name: ${{ vars.AKS_NAME }}
 
-      - name: Deploy frontend with Helm
+      - name: Pick values file
+        id: pick
+        shell: bash
         run: |
-          helm upgrade --install ${{ github.event.inputs.release }} ./charts/frontend \
+          if [[ "${{ inputs.release }}" == "frontend-green" ]]; then
+            echo "file=env/${{ inputs.environment }}/values-frontend-green.yaml" >> $GITHUB_OUTPUT
+          else
+            echo "file=env/${{ inputs.environment }}/values-frontend-blue.yaml" >> $GITHUB_OUTPUT
+          fi
+          echo "Using values file: $(cat $GITHUB_OUTPUT)"
+
+      - name: Helm upgrade/install
+        run: |
+          helm upgrade --install "${{ inputs.release }}" ./charts/frontend \
             --namespace app \
             --create-namespace \
-            --values env/${{ github.event.inputs.environment }}/values-frontend-${{ github.event.inputs.release == 'frontend-blue' && 'blue' || 'green' }}.yaml \
-            --set image.tag=${{ github.event.inputs.image_tag }}
+            -f "${{ steps.pick.outputs.file }}" \
+            --set image.repository=${{ vars.ACR_NAME }}.azurecr.io/frontend \
+            --set image.tag=${{ inputs.image_tag }}
+
+      - name: Wait for rollout
+        run: |
+          DEPLOY="${{ inputs.release }}-frontend"
+          kubectl -n app rollout status deploy/$DEPLOY --timeout=120s || true
+          echo "Image in use:"
+          kubectl -n app get deploy $DEPLOY -o=jsonpath='{.spec.template.spec.containers[0].image}'; echo
+
+      - name: List services/pods
+        run: |
+          kubectl -n app get deploy,svc,pods -l app.kubernetes.io/instance=${{ inputs.release }}
