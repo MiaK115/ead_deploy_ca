@@ -1,8 +1,8 @@
 replicaCount: 1
 
 image:
-  repository: ""            
-  tag: "latest"
+  repository: eadacr5320.azurecr.io/frontend
+  tag: ""                                     
   pullPolicy: IfNotPresent
 
 containerPort: 3000
@@ -32,7 +32,7 @@ resources:
   limits:
     cpu: 250m
     memory: 256Mi
-        
+
 nodeSelector: {}
 tolerations: []
 affinity: {}

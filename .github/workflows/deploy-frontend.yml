@@ -40,6 +40,7 @@ jobs:
           helm upgrade --install ${{ github.event.inputs.release }} ./charts/frontend \
             --namespace app \
             --create-namespace \
+            --reset-values \
             --set image.repository=eadacr5320.azurecr.io/frontend \
             --set image.tag=${{ github.event.inputs.image_tag }} \
-            --set environment=${{ github.event.inputs.environment }}
+            -f env/${{ github.event.inputs.environment }}/values-frontend.yaml
