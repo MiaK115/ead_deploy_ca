@@ -1,0 +1,45 @@
+name: deploy-frontend
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (e.g., staging, prod)"
+        required: true
+        default: "staging"
+      release:
+        description: "Frontend release name (frontend-blue or frontend-green)"
+        required: true
+        default: "frontend-blue"
+      image_tag:
+        description: "Image tag (commit SHA from frontend build)"
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          cluster-name: ead-aks
+          resource-group: ead-rg
+
+      - name: Deploy frontend with Helm
+        run: |
+          helm upgrade --install ${{ github.event.inputs.release }} ./charts/frontend \
+            --namespace app \
+            --create-namespace \
+            --set image.repository=eadacr5320.azurecr.io/frontend \
+            --set image.tag=${{ github.event.inputs.image_tag }} \
+            --set environment=${{ github.event.inputs.environment }}
