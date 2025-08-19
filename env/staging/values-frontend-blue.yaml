@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+  repository: "{{ .Values.acr }}/frontend"   # the deploy workflow will pass acr + tag
+  tag: "{{ .Values.tag }}"
+  pullPolicy: IfNotPresent
+
+containerPort: 3000
+
+service:
+  type: ClusterIP
+  port: 80
+
+env:
+  - name: NODE_ENV
+    value: production
