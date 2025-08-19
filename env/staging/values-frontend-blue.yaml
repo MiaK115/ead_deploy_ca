@@ -1,8 +1,8 @@
 replicaCount: 1
 
 image:
-  repository: "{{ .Values.acr }}/frontend"   # the deploy workflow will pass acr + tag
-  tag: "{{ .Values.tag }}"
+  repository: eadacr5320.azurecr.io/frontend   # hardcode ACR repo here
+  tag: ""                                       # tag will be set from the workflow
   pullPolicy: IfNotPresent
 
 containerPort: 3000
