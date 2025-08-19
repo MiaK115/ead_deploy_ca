@@ -43,4 +43,4 @@ jobs:
             --reset-values \
             --set image.repository=eadacr5320.azurecr.io/frontend \
             --set image.tag=${{ github.event.inputs.image_tag }} \
-            -f env/${{ github.event.inputs.environment }}/values-frontend.yaml
+            -f env/${{ github.event.inputs.environment }}/values-frontend-blue.yaml \
