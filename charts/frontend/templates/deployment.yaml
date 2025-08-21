@@ -36,13 +36,13 @@ spec:
             {{- end }}
           readinessProbe:
             httpGet:
-              path: /
+              path: {{ .Values.probes.readinessPath }}
               port: {{ .Values.containerPort }}
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /
+              path: {{ .Values.probes.livenessPath }}
               port: {{ .Values.containerPort }}
             initialDelaySeconds: 15
             periodSeconds: 20

@@ -33,6 +33,10 @@ resources:
     cpu: 250m
     memory: 256Mi
 
+probes:
+  readinessPath: /healthz
+  livenessPath: /healthz
+
 nodeSelector: {}
 tolerations: []
 affinity: {}
