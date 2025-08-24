@@ -20,31 +20,32 @@ spec:
         runAsUser: 1000
       containers:
         - name: user
-          # Image will be updated by the deploy-backend workflow
           image: eadacr5320.azurecr.io/user-service:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8081
+            - containerPort: 8080
           env:
             - name: NODE_ENV
               value: production
             - name: PORT
-              value: "8081"
-            - name: MONGO_URI
+              value: "8080"
+            - name: mongoUri
               valueFrom:
                 secretKeyRef:
                   name: mongo
                   key: MONGO_URI
+            - name: dbName
+              value: ead
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8081
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8081
+              port: 8080
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:
@@ -66,7 +67,7 @@ spec:
   type: ClusterIP
   ports:
     - name: http
-      port: 8081
-      targetPort: 8081
+      port: 8080
+      targetPort: 8080
   selector:
     app.kubernetes.io/name: user-service
