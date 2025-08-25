@@ -1,0 +1,49 @@
+name: monitoring
+on:
+  workflow_dispatch:
+
+jobs:
+  install-monitoring:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ vars.AKS_RG }}
+          cluster-name: ${{ vars.AKS_NAME }}
+
+      - name: Helm repos
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+
+      - name: Install kube-prometheus-stack (Prometheus + Grafana)
+        run: |
+          helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+            -n monitoring --create-namespace \
+            --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+            --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false
+
+      - name: Apply ServiceMonitors for app services
+        run: |
+          kubectl -n monitoring apply -f monitoring/servicemonitor-recipe.yaml
+          kubectl -n monitoring apply -f monitoring/servicemonitor-user.yaml
+
+      - name: Show Grafana admin password
+        run: |
+          echo "Grafana admin user: admin"
+          echo "Grafana admin password:"
+          kubectl -n monitoring get secret monitoring-grafana -o jsonpath='{.data.admin-password}' | base64 -d; echo
+
+      - name: Verify resources
+        run: |
+          kubectl -n monitoring get pods
+          kubectl -n monitoring get servicemonitors
+          kubectl -n monitoring get svc | egrep 'grafana|prometheus'
