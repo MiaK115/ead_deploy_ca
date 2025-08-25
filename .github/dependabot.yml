@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # Docker – API Gateway image base updates
+  - package-ecosystem: "docker"
+    directory: "/api-gateway"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "security"]
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "ci"]
