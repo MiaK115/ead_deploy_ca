@@ -33,7 +33,7 @@ jobs:
 
       # Get kubeconfig for AKS (uses repo variables)
       - name: Set AKS context
-        uses: azure/aks-set-context@v3
+        uses: azure/aks-set-context@v4
         with:
           resource-group: ${{ vars.AKS_RG }}
           cluster-name: ${{ vars.AKS_NAME }}
