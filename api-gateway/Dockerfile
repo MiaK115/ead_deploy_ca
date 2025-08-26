@@ -1,4 +1,4 @@
-FROM nginx:1.27-alpine
+FROM nginx:1.29-alpine
 
 # Fix CVEs by upgrading base packages at build time
 RUN apk --no-cache upgrade
